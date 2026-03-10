@@ -48,7 +48,7 @@ overflow:auto;
 position:relative;
 }
 
-/* НОВИЙ ДИЗАЙН ВЕРХНЬОГО БЛОКУ */
+/* Верхній блок */
 .topStats{
 position:sticky;
 top:0;
@@ -81,7 +81,7 @@ font-weight:bold;
 font-size:32px;
 }
 
-/* Денна норма під балансом */
+/* Денна норма */
 .daily-progress{
 color:#94a3b8;
 font-size:16px;
@@ -93,19 +93,46 @@ color:#f59e0b;
 font-weight:bold;
 }
 
-/* Контейнер для прогрес-бару */
-.progress-container{
-width:80%;
-max-width:600px;
+/* Контейнер для прогрес-барів */
+.goals-container{
+width:90%;
+max-width:800px;
+display:flex;
+flex-direction:column;
+gap:15px;
+margin-top:10px;
+}
+
+/* Окрема ціль */
+.goal-item{
+width:100%;
 text-align:center;
 }
 
-/* Сам прогрес-бар */
+.goal-header{
+display:flex;
+justify-content:space-between;
+margin-bottom:5px;
+color:#94a3b8;
+font-size:14px;
+}
+
+.goal-name{
+color:#f59e0b;
+font-weight:bold;
+}
+
+.goal-stats span{
+color:#38bdf8;
+font-weight:bold;
+}
+
+/* Прогрес-бар */
 .progress-bar{
 width:100%;
-height:30px;
+height:25px;
 background:#1e293b;
-border-radius:15px;
+border-radius:12px;
 overflow:hidden;
 border:1px solid #334155;
 }
@@ -120,21 +147,8 @@ align-items:center;
 justify-content:flex-end;
 padding-right:10px;
 color:white;
-font-size:14px;
+font-size:12px;
 font-weight:bold;
-}
-
-/* Текст під прогрес-баром */
-.progress-text{
-margin-top:5px;
-color:#94a3b8;
-font-size:14px;
-}
-
-.progress-text span{
-color:#38bdf8;
-font-weight:bold;
-font-size:18px;
 }
 
 .controls{
@@ -291,6 +305,48 @@ border:1px solid #334155;
 color:white;
 border-radius:4px;
 }
+
+/* Стилі для списку цілей */
+.goals-list{
+display:flex;
+flex-direction:column;
+gap:10px;
+margin-top:15px;
+}
+
+.goal-card{
+background:#1e293b;
+padding:15px;
+border-radius:8px;
+display:flex;
+justify-content:space-between;
+align-items:center;
+border-left:4px solid #f59e0b;
+}
+
+.goal-card-info{
+flex-grow:1;
+}
+
+.goal-card-name{
+font-size:16px;
+font-weight:bold;
+color:#f59e0b;
+}
+
+.goal-card-progress{
+font-size:14px;
+color:#94a3b8;
+}
+
+.goal-card-delete{
+background:#ef4444;
+color:white;
+border:none;
+border-radius:4px;
+padding:5px 10px;
+cursor:pointer;
+}
 </style>
 </head>
 
@@ -307,7 +363,7 @@ border-radius:4px;
 
 <div class="main">
 
-<!-- НОВИЙ ВЕРХНІЙ БЛОК -->
+<!-- ВЕРХНІЙ БЛОК З ДЕКІЛЬКОМА ЦІЛЯМИ -->
 <div class="topStats">
 <!-- Баланс по центру -->
 <div class="balance-box">
@@ -321,15 +377,9 @@ border-radius:4px;
 🎯 Осталось: <span id="dailyRemaining">50</span>$
 </div>
 
-<!-- Прогрес до 1200$ -->
-<div class="progress-container">
-<div class="progress-bar">
-<div class="progress-fill" id="progressFill" style="width: 0%;">0%</div>
-</div>
-<div class="progress-text">
-<span id="currentBalance">20</span>$ из <span id="bigGoal">1200</span>$ 
-🏆 Осталось: <span id="remainingGoal">1180</span>$
-</div>
+<!-- ВСІ ЦІЛІ -->
+<div class="goals-container" id="goalsContainer">
+<!-- Цілі будуть додаватися сюди JavaScript-ом -->
 </div>
 </div>
 
@@ -381,7 +431,7 @@ border-radius:4px;
 <canvas id="balanceChart"></canvas>
 </div>
 
-<!-- ========== ОНОВЛЕНА ВКЛАДКА БАЛАНС ========== -->
+<!-- BALANCE - ТУТ ТЕПЕР МОЖНА ДОДАВАТИ БАГАТО ЦІЛЕЙ -->
 <div id="balanceTab" class="tab">
 <h2>Текущий баланс</h2>
 <div class="controls">
@@ -389,19 +439,21 @@ border-radius:4px;
 <button class="save" onclick="setBalance()">Сохранить</button>
 </div>
 
-<!-- НОВИЙ БЛОК ДЛЯ ЗМІНИ ЦІЛІ -->
+<!-- НОВИЙ БЛОК ДЛЯ ДОДАВАННЯ ЦІЛЕЙ -->
 <div class="box" style="margin-top:20px;">
-<h3>🎯 Большая цель</h3>
+<h3>🎯 Мои цели</h3>
 <div class="controls">
-<input id="goalInput" type="number" value="1200" placeholder="цель $" style="padding:10px; width:150px; background:#1e293b; border:1px solid #334155; color:white; border-radius:6px;">
-<button class="save" onclick="setBigGoal()">Изменить цель</button>
+<input id="newGoalName" placeholder="название цели" style="width:150px;">
+<input id="newGoalValue" type="number" placeholder="сумма $" style="width:120px;">
+<button class="plus" onclick="addGoal()">➕ Добавить цель</button>
 </div>
-<p>Текущая цель: <strong><span id="currentGoal">1200</span>$</strong></p>
+
+<!-- Список цілей -->
+<div class="goals-list" id="goalsList"></div>
 </div>
 
 <div class="box">
-<p>💰 Текущий прогресс: <span id="balanceDisplay">20</span>$ / <span id="goalDisplay">1200</span>$</p>
-<p>📊 Процент выполнения: <span id="percentDisplay">1.7</span>%</p>
+<p>💰 Текущий прогресс: <span id="balanceDisplay">20</span>$</p>
 </div>
 </div>
 
@@ -429,6 +481,11 @@ function openTab(tabId) {
         tab.classList.remove('active');
     });
     document.getElementById(tabId).classList.add('active');
+    
+    // Оновлюємо список цілей при відкритті вкладки Баланс
+    if (tabId === 'balanceTab') {
+        renderGoalsList();
+    }
 }
 
 // ========== ВАШ URL ТА КЛЮЧ ==========
@@ -513,8 +570,11 @@ let dates = localStorage.dates ? JSON.parse(localStorage.dates) : [];
 let tradeDetails = localStorage.tradeDetails ? JSON.parse(localStorage.tradeDetails) : [];
 let dailyHistory = localStorage.dailyHistory ? JSON.parse(localStorage.dailyHistory) : {};
 
-// ЗМІНЕНО: тепер let замість const, і беремо з localStorage
-let BIG_GOAL = localStorage.bigGoal ? Number(localStorage.bigGoal) : 1200;
+// ========== ЦІЛІ ==========
+let goals = localStorage.goals ? JSON.parse(localStorage.goals) : [
+    { id: 1, name: "Первая цель", value: 1200 }
+];
+
 let dailyGoal = localStorage.dailyGoal ? Number(localStorage.dailyGoal) : 50;
 let dailyLoss = localStorage.dailyLoss ? Number(localStorage.dailyLoss) : 20;
 
@@ -529,12 +589,126 @@ function getTodayProfit() {
     return dailyHistory[today] || 0;
 }
 
-// ОНОВЛЕНА ФУНКЦІЯ ДЛЯ ВСІХ ПОКАЗНИКІВ
+// ========== ФУНКЦІЇ ДЛЯ РОБОТИ З ЦІЛЯМИ ==========
+function addGoal() {
+    let name = document.getElementById("newGoalName").value.trim();
+    let value = Number(document.getElementById("newGoalValue").value);
+    
+    if (!name || !value) {
+        alert('Введіть назву та суму цілі!');
+        return;
+    }
+    
+    let newId = goals.length > 0 ? Math.max(...goals.map(g => g.id)) + 1 : 1;
+    
+    goals.push({
+        id: newId,
+        name: name,
+        value: value
+    });
+    
+    localStorage.goals = JSON.stringify(goals);
+    
+    document.getElementById("newGoalName").value = "";
+    document.getElementById("newGoalValue").value = "";
+    
+    renderGoals();
+    renderGoalsList();
+    
+    showNotification('✅ Ціль додано', `${name}: ${value}$`);
+}
+
+function deleteGoal(id) {
+    goals = goals.filter(g => g.id !== id);
+    localStorage.goals = JSON.stringify(goals);
+    
+    renderGoals();
+    renderGoalsList();
+    
+    showNotification('🗑️ Ціль видалено', '', 'info');
+}
+
+function showNotification(title, message, type = 'success') {
+    let colors = { success: '#22c55e', warning: '#f59e0b', danger: '#ef4444', info: '#38bdf8' };
+    let notif = document.createElement('div');
+    notif.style.cssText = `
+        position:fixed; top:20px; right:20px; background:#1e293b;
+        border-left:4px solid ${colors[type]}; padding:15px 25px;
+        border-radius:8px; box-shadow:0 10px 30px rgba(0,0,0,0.3);
+        z-index:1000; animation:slideIn 0.3s ease;
+    `;
+    notif.innerHTML = `<strong>${title}</strong><br>${message}`;
+    document.body.appendChild(notif);
+    setTimeout(() => notif.remove(), 3000);
+}
+
+// ========== ВІДОБРАЖЕННЯ ЦІЛЕЙ ==========
+function renderGoals() {
+    let container = document.getElementById("goalsContainer");
+    if (!container) return;
+    
+    container.innerHTML = "";
+    
+    goals.sort((a, b) => a.value - b.value).forEach(goal => {
+        let percent = (balance / goal.value * 100);
+        if (percent > 100) percent = 100;
+        
+        let remaining = goal.value - balance;
+        if (remaining < 0) remaining = 0;
+        
+        let goalDiv = document.createElement("div");
+        goalDiv.className = "goal-item";
+        goalDiv.innerHTML = `
+            <div class="goal-header">
+                <span class="goal-name">🎯 ${goal.name}</span>
+                <span class="goal-stats">
+                    <span>${balance.toFixed(2)}$</span> / ${goal.value}$ 
+                    (осталось <span>${remaining.toFixed(2)}$</span>)
+                </span>
+            </div>
+            <div class="progress-bar">
+                <div class="progress-fill" style="width: ${percent}%;">
+                    ${percent.toFixed(1)}%
+                </div>
+            </div>
+        `;
+        container.appendChild(goalDiv);
+    });
+}
+
+function renderGoalsList() {
+    let container = document.getElementById("goalsList");
+    if (!container) return;
+    
+    container.innerHTML = "";
+    
+    goals.forEach(goal => {
+        let percent = (balance / goal.value * 100).toFixed(1);
+        if (percent > 100) percent = 100;
+        
+        let goalCard = document.createElement("div");
+        goalCard.className = "goal-card";
+        goalCard.innerHTML = `
+            <div class="goal-card-info">
+                <div class="goal-card-name">🎯 ${goal.name}</div>
+                <div class="goal-card-progress">
+                    ${balance.toFixed(2)}$ / ${goal.value}$ (${percent}%)
+                </div>
+            </div>
+            <button class="goal-card-delete" onclick="deleteGoal(${goal.id})">✗</button>
+        `;
+        container.appendChild(goalCard);
+    });
+    
+    if (goals.length === 0) {
+        container.innerHTML = '<p class="note">Нет целей. Добавьте первую!</p>';
+    }
+}
+
+// ========== ОНОВЛЕННЯ ВСІХ ПОКАЗНИКІВ ==========
 function updateTopStats() {
     // Баланс
     document.getElementById("balance").innerText = balance.toFixed(2);
-    document.getElementById("currentBalance").innerText = balance.toFixed(2);
-    document.getElementById("bigGoal").innerText = BIG_GOAL;
     
     // Денна норма
     document.getElementById("dailyGoalDisplay").innerText = dailyGoal;
@@ -544,50 +718,11 @@ function updateTopStats() {
     if (dailyRemaining < 0) dailyRemaining = 0;
     document.getElementById("dailyRemaining").innerText = dailyRemaining.toFixed(2);
     
-    // Прогрес до цілі
-    let remaining = BIG_GOAL - balance;
-    if (remaining < 0) remaining = 0;
-    document.getElementById("remainingGoal").innerText = remaining.toFixed(2);
-    
-    let percent = (balance / BIG_GOAL * 100);
-    if (percent > 100) percent = 100;
-    
-    let progressBar = document.getElementById("progressFill");
-    progressBar.style.width = percent + "%";
-    progressBar.innerText = percent.toFixed(1) + "%";
-    
     // Для вкладки Баланс
     document.getElementById("balanceDisplay").innerText = balance.toFixed(2);
-    document.getElementById("goalDisplay").innerText = BIG_GOAL;
-    document.getElementById("percentDisplay").innerText = percent.toFixed(1);
-    document.getElementById("currentGoal").innerText = BIG_GOAL;
-    document.getElementById("goalInput").value = BIG_GOAL;
-}
-
-// ========== НОВА ФУНКЦІЯ ДЛЯ ЗМІНИ БОЛЬШОЇ ЦІЛІ ==========
-function setBigGoal() {
-    let newGoal = Number(document.getElementById("goalInput").value);
-    if (!newGoal || newGoal < 1) {
-        alert('Введіть коректну ціль!');
-        return;
-    }
     
-    BIG_GOAL = newGoal;
-    localStorage.bigGoal = BIG_GOAL;
-    
-    updateTopStats();
-    
-    // Показуємо сповіщення
-    let notif = document.createElement('div');
-    notif.style.cssText = `
-        position:fixed; top:20px; right:20px; background:#1e293b;
-        border-left:4px solid #22c55e; padding:15px 25px;
-        border-radius:8px; box-shadow:0 10px 30px rgba(0,0,0,0.3);
-        z-index:1000; animation:slideIn 0.3s ease;
-    `;
-    notif.innerHTML = `<strong>✅ Ціль змінено</strong><br>Нова ціль: ${BIG_GOAL}$`;
-    document.body.appendChild(notif);
-    setTimeout(() => notif.remove(), 3000);
+    // Оновлюємо всі цілі
+    renderGoals();
 }
 
 // ========== ТОРГОВІ ФУНКЦІЇ ==========
@@ -616,11 +751,19 @@ function addTrade(win) {
     updateStats();
     updateBudget();
     updateDailyHistoryList();
+    renderGoalsList();
     
     sendTradeToTradeNote({ coin: coin, amount: v, type: type, side: win ? "BC" : "SS" });
     
     document.getElementById("amount").value = "";
     document.getElementById("coinName").value = "";
+    
+    // Перевіряємо чи досягнуто якусь ціль
+    goals.forEach(goal => {
+        if (balance >= goal.value) {
+            showNotification('🏆 ЦІЛЬ ДОСЯГНУТО!', `Ви досягли цілі: ${goal.name} (${goal.value}$)`, 'success');
+        }
+    });
 }
 
 function addDailyTrade(win) {
@@ -647,6 +790,7 @@ function addDailyTrade(win) {
     updateStats();
     updateBudget();
     updateDailyHistoryList();
+    renderGoalsList();
     
     document.getElementById("dailyAmount").value = "";
     document.getElementById("dailyCoin").value = "";
@@ -663,7 +807,7 @@ function deleteLastDailyTrade() {
     trades.splice(lastDailyIndex, 1); dates.splice(lastDailyIndex, 1); tradeDetails.splice(lastDailyIndex, 1);
     balance -= removedTrade;
     recalcDailyHistory();
-    save(); renderTrades(); updateTopStats(); updateCharts(); updateStats(); updateBudget(); updateDailyHistoryList();
+    save(); renderTrades(); updateTopStats(); updateCharts(); updateStats(); updateBudget(); updateDailyHistoryList(); renderGoalsList();
 }
 
 function deleteLastTrade() {
@@ -671,7 +815,7 @@ function deleteLastTrade() {
     let lastTrade = trades.pop(); dates.pop(); tradeDetails.pop();
     balance -= lastTrade;
     recalcDailyHistory();
-    save(); renderTrades(); updateTopStats(); updateCharts(); updateStats(); updateBudget(); updateDailyHistoryList();
+    save(); renderTrades(); updateTopStats(); updateCharts(); updateStats(); updateBudget(); updateDailyHistoryList(); renderGoalsList();
 }
 
 function deleteAllTrades() {
@@ -679,7 +823,7 @@ function deleteAllTrades() {
     let currentBalance = balance;
     trades = []; dates = []; tradeDetails = []; dailyHistory = {};
     balance = currentBalance;
-    save(); renderTrades(); updateTopStats(); updateCharts(); updateStats(); updateBudget(); updateDailyHistoryList();
+    save(); renderTrades(); updateTopStats(); updateCharts(); updateStats(); updateBudget(); updateDailyHistoryList(); renderGoalsList();
 }
 
 function deleteSpecificTrade(index) {
@@ -689,7 +833,7 @@ function deleteSpecificTrade(index) {
     trades.splice(fullIndex, 1); dates.splice(fullIndex, 1); tradeDetails.splice(fullIndex, 1);
     balance -= removedTrade;
     recalcDailyHistory();
-    save(); renderTrades(); updateTopStats(); updateCharts(); updateStats(); updateBudget(); updateDailyHistoryList();
+    save(); renderTrades(); updateTopStats(); updateCharts(); updateStats(); updateBudget(); updateDailyHistoryList(); renderGoalsList();
 }
 
 function recalcDailyHistory() {
@@ -751,6 +895,7 @@ function setBalance() {
     balance = v;
     save();
     updateTopStats();
+    renderGoalsList();
 }
 
 function saveBudget() {
@@ -783,10 +928,18 @@ function updateStats() {
     let losses = trades.filter(t => t < 0);
     let winrate = trades.length ? (wins.length / trades.length * 100).toFixed(1) : 0;
     let totalProfit = trades.reduce((a, b) => a + b, 0).toFixed(2);
+    
+    let goalsText = '';
+    goals.forEach(goal => {
+        let percent = (balance / goal.value * 100).toFixed(1);
+        if (percent > 100) percent = 100;
+        goalsText += `<br>🎯 ${goal.name}: ${percent}% (${balance.toFixed(2)}$ / ${goal.value}$)`;
+    });
+    
     let text = "📈 Винрейт: " + winrate + "%<br>";
     text += "📊 Всего сделок: " + trades.length + "<br>";
     text += "💰 Общая прибыль: " + totalProfit + "$<br>";
-    text += "🏆 Прогресс к " + BIG_GOAL + "$: " + ((balance / BIG_GOAL) * 100).toFixed(1) + "%";
+    text += "🏆 Прогресс по целям:" + goalsText;
     document.getElementById("statsBox").innerHTML = text;
 }
 
@@ -837,10 +990,18 @@ updateCharts();
 updateStats();
 updateBudget();
 updateDailyHistoryList();
+renderGoals();
+renderGoalsList();
 
 document.getElementById("dailyGoal").value = dailyGoal;
 document.getElementById("dailyLoss").value = dailyLoss;
 </script>
 
+<style>
+@keyframes slideIn{
+from{transform:translateX(100%); opacity:0;}
+to{transform:translateX(0); opacity:1;}
+}
+</style>
 </body>
 </html>
