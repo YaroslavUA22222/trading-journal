@@ -1,0 +1,681 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<title>Trading Journal V5</title>
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+<style>
+body{
+margin:0;
+font-family: 'Segoe UI', Arial, sans-serif;
+background:#0f172a;
+color:white;
+display:flex;
+height:100vh;
+}
+
+.sidebar{
+width:220px;
+background:#020617;
+display:flex;
+flex-direction:column;
+padding:20px;
+gap:10px;
+}
+
+.tabBtn{
+padding:12px;
+border:none;
+border-radius:8px;
+background:#1e293b;
+color:white;
+cursor:pointer;
+text-align:left;
+font-size:14px;
+transition:all 0.2s;
+}
+
+.tabBtn:hover{
+background:#38bdf8;
+transform:translateX(5px);
+}
+
+.main{
+flex:1;
+padding:30px;
+overflow:auto;
+position:relative;
+}
+
+.topStats{
+position:sticky;
+top:0;
+background:#0f172a;
+padding:20px 0;
+margin-bottom:20px;
+border-bottom:2px solid #334155;
+z-index:100;
+display:flex;
+justify-content:center;
+align-items:center;
+gap:40px;
+backdrop-filter:blur(10px);
+}
+
+.statBox{
+background:linear-gradient(135deg, #020617 0%, #1e293b 100%);
+padding:15px 40px;
+border-radius:50px;
+font-size:20px;
+display:inline-block;
+border:1px solid #38bdf8;
+box-shadow:0 10px 30px rgba(56, 189, 248, 0.2);
+}
+
+.statBox span{
+color:#38bdf8;
+font-weight:bold;
+font-size:24px;
+}
+
+.statBox .label{
+color:#94a3b8;
+font-size:14px;
+margin-right:10px;
+}
+
+.controls{
+margin:20px 0;
+display:flex;
+gap:10px;
+flex-wrap:wrap;
+align-items:center;
+}
+
+.controls input, .controls select{
+padding:10px;
+border-radius:6px;
+border:1px solid #334155;
+background:#1e293b;
+color:white;
+}
+
+.controls input{
+width:120px;
+}
+
+.controls select{
+width:140px;
+cursor:pointer;
+}
+
+.controls button{
+padding:10px 14px;
+border:none;
+border-radius:6px;
+cursor:pointer;
+font-weight:bold;
+transition:all 0.2s;
+}
+
+.controls button:hover{
+transform:translateY(-2px);
+box-shadow:0 5px 15px rgba(0,0,0,0.3);
+}
+
+.plus{background:#22c55e;color:white;}
+.minus{background:#ef4444;color:white;}
+.delete{background:#f97316;color:white;}
+.deleteAll{background:#7f1d1d;color:white;}
+.save{background:#38bdf8;color:white;}
+
+.squaresContainer{
+display:flex;
+flex-wrap:wrap;
+gap:8px;
+margin-top:20px;
+}
+
+.square{
+width:80px;
+height:80px;
+border-radius:8px;
+display:flex;
+flex-direction:column;
+align-items:center;
+justify-content:center;
+font-weight:bold;
+transition:all 0.2s;
+background:#1e293b;
+border:1px solid #334155;
+font-size:12px;
+text-align:center;
+line-height:1.3;
+padding:5px;
+position:relative;
+}
+
+.square:hover{
+transform:scale(1.1);
+cursor:pointer;
+box-shadow:0 10px 20px rgba(0,0,0,0.3);
+border-color:#38bdf8;
+z-index:10;
+}
+
+.square.win{
+background:linear-gradient(135deg, #22c55e 0%, #16a34a 100%);
+border:none;
+}
+
+.square.loss{
+background:linear-gradient(135deg, #ef4444 0%, #dc2626 100%);
+border:none;
+}
+
+.square.spead{
+border-left:4px solid #f59e0b;
+}
+
+.square.prostrel{
+border-left:4px solid #8b5cf6;
+}
+
+.square:hover .tooltip{
+display:block;
+}
+
+.tooltip{
+display:none;
+position:absolute;
+bottom:100%;
+left:50%;
+transform:translateX(-50%);
+background:#020617;
+padding:8px;
+border-radius:6px;
+font-size:12px;
+white-space:nowrap;
+border:1px solid #38bdf8;
+margin-bottom:5px;
+z-index:20;
+color:white;
+}
+
+.tab{display:none}
+.active{display:block}
+
+.box{
+background:#020617;
+padding:15px;
+border-radius:10px;
+margin-top:10px;
+border:1px solid #334155;
+}
+
+canvas{
+background:#020617;
+border-radius:10px;
+padding:10px;
+max-width:100%;
+max-height:300px;
+}
+
+h2{
+color:#94a3b8;
+font-weight:300;
+letter-spacing:1px;
+}
+
+.note{
+color:#64748b;
+font-size:12px;
+margin-top:5px;
+}
+
+.goal-input{
+width:80px;
+padding:5px;
+margin-left:10px;
+background:#1e293b;
+border:1px solid #334155;
+color:white;
+border-radius:4px;
+}
+</style>
+</head>
+
+<body>
+
+<div class="sidebar">
+<button class="tabBtn" onclick="openTab('trades')">⚡ Сделки</button>
+<button class="tabBtn" onclick="openTab('dailyTrades')">📅 Дневные сделки</button>
+<button class="tabBtn" onclick="openTab('dailyGraph')">📊 Графики</button>
+<button class="tabBtn" onclick="openTab('balanceTab')">💰 Баланс</button>
+<button class="tabBtn" onclick="openTab('budget')">🎯 Контроль</button>
+<button class="tabBtn" onclick="openTab('stats')">📊 Статистика</button>
+</div>
+
+<div class="main">
+
+<div class="topStats">
+<div class="statBox">
+<span class="label">💰 Баланс:</span>
+<span id="balance">20</span>
+</div>
+<div class="statBox">
+<span class="label">🎯 Цель 1200$:</span>
+<span id="progressPercent">1.7</span>%
+</div>
+</div>
+
+<!-- TRADES -->
+<div id="trades" class="tab active">
+<h2>Сделки (поштучно)</h2>
+<div class="controls">
+<input id="amount" placeholder="сумма $">
+<input id="coinName" placeholder="монета (BTC, ETH...)" style="width:120px;">
+<select id="tradeType">
+<option value="spead">📊 Спред</option>
+<option value="prostrel">⚡ Прострел</option>
+</select>
+<button class="plus" onclick="addTrade(true)">+ Прибыль</button>
+<button class="minus" onclick="addTrade(false)">- Убыток</button>
+<button class="delete" onclick="deleteLastTrade()">⌫ Удалить последнюю</button>
+<button class="deleteAll" onclick="deleteAllTrades()">✗ Удалить все</button>
+</div>
+<div class="squaresContainer" id="squaresContainer"></div>
+<div class="note">Наведите на квадрат чтобы увидеть детали. Нажмите чтобы удалить.</div>
+</div>
+
+<!-- DAILY TRADES -->
+<div id="dailyTrades" class="tab">
+<h2>Дневной результат</h2>
+<p class="note">Введите сумму, которую заработали сегодня</p>
+<div class="controls">
+<input id="dailyAmount" placeholder="сумма за день $">
+<input id="dailyCoin" placeholder="монета" style="width:120px;">
+<select id="dailyType">
+<option value="spead">📊 Спред</option>
+<option value="prostrel">⚡ Прострел</option>
+</select>
+<button class="plus" onclick="addDailyTrade(true)">+ Дневная прибыль</button>
+<button class="minus" onclick="addDailyTrade(false)">- Дневной убыток</button>
+<button class="delete" onclick="deleteLastDailyTrade()">⌫ Удалить последнюю дневную</button>
+</div>
+<div class="box">
+<h3>История дневных результатов</h3>
+<div id="dailyHistoryList"></div>
+</div>
+</div>
+
+<!-- DAILY GRAPH -->
+<div id="dailyGraph" class="tab">
+<h2>График дневной прибыли</h2>
+<canvas id="dailyChart"></canvas>
+<h2 style="margin-top:30px;">График баланса (по сделкам)</h2>
+<canvas id="balanceChart"></canvas>
+</div>
+
+<!-- BALANCE -->
+<div id="balanceTab" class="tab">
+<h2>Текущий баланс</h2>
+<input id="balanceInput" placeholder="ввести баланс вручную" style="padding:10px; width:200px;">
+<button class="save" onclick="setBalance()">Сохранить</button>
+<div class="box">
+<p>🏆 Большая цель: <strong>1200$</strong></p>
+<p>💰 Текущий прогресс: <span id="balanceDisplay">20</span>$ / 1200$</p>
+<p>📊 Процент выполнения: <span id="percentDisplay">1.7</span>%</p>
+</div>
+</div>
+
+<!-- BUDGET -->
+<div id="budget" class="tab">
+<h2>Контроль дисциплины</h2>
+<p>Дневная цель: <input id="dailyGoal" class="goal-input" value="50"> $</p>
+<p>Лимит убытка на день: <input id="dailyLoss" class="goal-input" value="20"> $</p>
+<button class="save" onclick="saveBudget()">Сохранить</button>
+<div class="box" id="budgetInfo"></div>
+</div>
+
+<!-- STATS -->
+<div id="stats" class="tab">
+<h2>Статистика торговли</h2>
+<div class="box" id="statsBox"></div>
+</div>
+
+</div>
+
+<script>
+// ========== ГЛОБАЛЬНА ФУНКЦІЯ ВКЛАДОК ==========
+function openTab(tabId) {
+    document.querySelectorAll('.tab').forEach(tab => {
+        tab.classList.remove('active');
+    });
+    document.getElementById(tabId).classList.add('active');
+}
+
+// ========== ВАШ URL ТА КЛЮЧ ==========
+const TRADENOTE_URL = "https://ominous-memory-6947wrjj4p9g3599w-8080.app.github.dev";
+const API_KEY = "kl0w1fsw1z1756koo81rgs8o3yhmyd";
+
+// ========== ФУНКЦІЯ ДЛЯ ВІДПРАВКИ В TRADENOTE ==========
+async function sendTradeToTradeNote(tradeData) {
+    const payload = {
+        data: [{
+            "Account": "Trading Journal",
+            "T/D": new Date().toLocaleDateString('en-US'),
+            "Symbol": tradeData.coin || "UNKNOWN",
+            "Side": tradeData.side || (tradeData.amount > 0 ? "BC" : "SS"),
+            "Qty": 1,
+            "Price": Math.abs(tradeData.amount),
+            "Gross Proceeds": tradeData.amount,
+            "Net Proceeds": tradeData.amount,
+            "Note": `${tradeData.type} | ${tradeData.mood || ''}`
+        }],
+        "selectedBroker": "template"
+    };
+    
+    try {
+        const response = await fetch(`${TRADENOTE_URL}/api/trades`, {
+            method: 'POST',
+            headers: {
+                "api-key": API_KEY,
+                "Content-Type": "application/json"
+            },
+            body: JSON.stringify(payload)
+        });
+        
+        if (response.ok) {
+            console.log("✅ Угоду відправлено в TradeNote!");
+        } else {
+            console.error("❌ Помилка відповіді:", await response.text());
+        }
+    } catch (error) {
+        console.error("❌ Помилка з'єднання:", error);
+    }
+}
+
+// ========== ОСНОВНІ ДАНІ ==========
+let balance = localStorage.balance ? Number(localStorage.balance) : 20;
+let trades = localStorage.trades ? JSON.parse(localStorage.trades) : [];
+let dates = localStorage.dates ? JSON.parse(localStorage.dates) : [];
+let tradeDetails = localStorage.tradeDetails ? JSON.parse(localStorage.tradeDetails) : [];
+let dailyHistory = localStorage.dailyHistory ? JSON.parse(localStorage.dailyHistory) : {};
+
+const BIG_GOAL = 1200;
+let dailyGoal = localStorage.dailyGoal ? Number(localStorage.dailyGoal) : 50;
+let dailyLoss = localStorage.dailyLoss ? Number(localStorage.dailyLoss) : 20;
+
+// ========== ДОПОМІЖНІ ФУНКЦІЇ ==========
+function getToday() {
+    let d = new Date();
+    return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0');
+}
+
+function getTodayProfit() {
+    let today = getToday();
+    return dailyHistory[today] || 0;
+}
+
+function updateTopStats() {
+    document.getElementById("balance").innerText = balance.toFixed(2);
+    let percent = (balance / BIG_GOAL * 100).toFixed(1);
+    document.getElementById("progressPercent").innerText = percent;
+    document.getElementById("balanceDisplay").innerText = balance.toFixed(2);
+    document.getElementById("percentDisplay").innerText = percent;
+}
+
+// ========== ТОРГОВІ ФУНКЦІЇ ==========
+function addTrade(win) {
+    let v = Number(document.getElementById("amount").value);
+    let coin = document.getElementById("coinName").value.trim() || 'Unknown';
+    let typeSelect = document.getElementById("tradeType");
+    let type = typeSelect.options[typeSelect.selectedIndex].text;
+    
+    if (!v) { alert('Введіть суму!'); return; }
+    if (!win) v = -Math.abs(v);
+    
+    balance += v;
+    let today = getToday();
+    if (!dailyHistory[today]) dailyHistory[today] = 0;
+    dailyHistory[today] += v;
+    
+    trades.push(v);
+    dates.push(new Date().toLocaleString());
+    tradeDetails.push({ coin: coin, type: type, amount: v, date: new Date().toLocaleString() });
+    
+    save();
+    renderTrades();
+    updateTopStats();
+    updateCharts();
+    updateStats();
+    updateBudget();
+    updateDailyHistoryList();
+    
+    // ВІДПРАВЛЯЄМО В TRADENOTE
+    sendTradeToTradeNote({ coin: coin, amount: v, type: type, side: win ? "BC" : "SS" });
+    
+    document.getElementById("amount").value = "";
+    document.getElementById("coinName").value = "";
+}
+
+function addDailyTrade(win) {
+    let v = Number(document.getElementById("dailyAmount").value);
+    let coin = document.getElementById("dailyCoin").value.trim() || 'Unknown';
+    let typeSelect = document.getElementById("dailyType");
+    let type = typeSelect.options[typeSelect.selectedIndex].text;
+    
+    if (!v) { alert('Введіть суму!'); return; }
+    if (!win) v = -Math.abs(v);
+    
+    balance += v;
+    let today = getToday();
+    dailyHistory[today] = (dailyHistory[today] || 0) + v;
+    
+    trades.push(v);
+    dates.push(new Date().toLocaleString() + " (денний)");
+    tradeDetails.push({ coin: coin, type: type, amount: v, date: new Date().toLocaleString(), isDaily: true });
+    
+    save();
+    renderTrades();
+    updateTopStats();
+    updateCharts();
+    updateStats();
+    updateBudget();
+    updateDailyHistoryList();
+    
+    document.getElementById("dailyAmount").value = "";
+    document.getElementById("dailyCoin").value = "";
+}
+
+function deleteLastDailyTrade() {
+    if (trades.length === 0) return;
+    let lastDailyIndex = -1;
+    for (let i = trades.length - 1; i >= 0; i--) {
+        if (dates[i] && dates[i].includes('(денний)')) { lastDailyIndex = i; break; }
+    }
+    if (lastDailyIndex === -1) { alert('Немає денних угод для видалення'); return; }
+    let removedTrade = trades[lastDailyIndex];
+    trades.splice(lastDailyIndex, 1); dates.splice(lastDailyIndex, 1); tradeDetails.splice(lastDailyIndex, 1);
+    balance -= removedTrade;
+    recalcDailyHistory();
+    save(); renderTrades(); updateTopStats(); updateCharts(); updateStats(); updateBudget(); updateDailyHistoryList();
+}
+
+function deleteLastTrade() {
+    if (trades.length === 0) return;
+    let lastTrade = trades.pop(); dates.pop(); tradeDetails.pop();
+    balance -= lastTrade;
+    recalcDailyHistory();
+    save(); renderTrades(); updateTopStats(); updateCharts(); updateStats(); updateBudget(); updateDailyHistoryList();
+}
+
+function deleteAllTrades() {
+    if (!confirm('Видалити всі угоди з історії? Баланс залишиться поточним!')) return;
+    let currentBalance = balance;
+    trades = []; dates = []; tradeDetails = []; dailyHistory = {};
+    balance = currentBalance;
+    save(); renderTrades(); updateTopStats(); updateCharts(); updateStats(); updateBudget(); updateDailyHistoryList();
+}
+
+function deleteSpecificTrade(index) {
+    if (index < 0 || index >= trades.length) return;
+    let fullIndex = trades.length - 20 + index;
+    let removedTrade = trades[fullIndex];
+    trades.splice(fullIndex, 1); dates.splice(fullIndex, 1); tradeDetails.splice(fullIndex, 1);
+    balance -= removedTrade;
+    recalcDailyHistory();
+    save(); renderTrades(); updateTopStats(); updateCharts(); updateStats(); updateBudget(); updateDailyHistoryList();
+}
+
+function recalcDailyHistory() {
+    dailyHistory = {};
+    for (let i = 0; i < trades.length; i++) {
+        let date = dates[i] ? dates[i].split(' ')[0] : getToday();
+        if (!dailyHistory[date]) dailyHistory[date] = 0;
+        dailyHistory[date] += trades[i];
+    }
+}
+
+function renderTrades() {
+    let container = document.getElementById("squaresContainer");
+    if (!container) return;
+    container.innerHTML = "";
+    let start = Math.max(0, trades.length - 20);
+    for (let i = start; i < trades.length; i++) {
+        let t = trades[i];
+        let detail = tradeDetails[i] || { coin: '?', type: 'Спред' };
+        let typeClass = detail.type === 'Спред' ? 'spead' : 'prostrel';
+        
+        let square = document.createElement("div");
+        square.className = `square ${t > 0 ? 'win' : 'loss'} ${typeClass}`;
+        square.innerHTML = `
+            <div><strong>${detail.coin}</strong></div>
+            <div>${t > 0 ? '+' : ''}${t}$</div>
+            <div class="tooltip">
+                Монета: ${detail.coin}<br>
+                Тип: ${detail.type}<br>
+                Сума: ${t > 0 ? '+' : ''}${t}$<br>
+                Дата: ${dates[i] || ''}
+            </div>
+        `;
+        square.onclick = function() { deleteSpecificTrade(i - start); };
+        container.appendChild(square);
+    }
+}
+
+function updateDailyHistoryList() {
+    let box = document.getElementById("dailyHistoryList");
+    if (!box) return;
+    let html = "";
+    let sortedDays = Object.keys(dailyHistory).sort().reverse();
+    for (let day of sortedDays.slice(0, 10)) {
+        let profit = dailyHistory[day];
+        let color = profit >= 0 ? "#4ade80" : "#f87171";
+        html += `<div style="padding:5px; border-bottom:1px solid #334155;">
+            ${day}: <span style="color:${color};font-weight:bold;">${profit > 0 ? '+' : ''}${profit.toFixed(2)}$</span>
+        </div>`;
+    }
+    box.innerHTML = html || "Нет данных";
+}
+
+function setBalance() {
+    let v = Number(document.getElementById("balanceInput").value);
+    if (!v) return;
+    balance = v;
+    save();
+    updateTopStats();
+}
+
+function saveBudget() {
+    dailyGoal = Number(document.getElementById("dailyGoal").value);
+    dailyLoss = Number(document.getElementById("dailyLoss").value);
+    localStorage.dailyGoal = dailyGoal;
+    localStorage.dailyLoss = dailyLoss;
+    updateBudget();
+}
+
+function updateBudget() {
+    let todayProfit = getTodayProfit();
+    let text = "";
+    text += "🎯 Дневная цель: " + dailyGoal + "$<br>";
+    text += "⚠️ Лимит убытка: " + dailyLoss + "$<br><br>";
+    if (todayProfit >= dailyGoal) {
+        text += "🟢 Дневная цель выполнена!";
+    } else {
+        text += "📊 Осталось до цели: " + (dailyGoal - todayProfit).toFixed(2) + "$";
+    }
+    if (todayProfit <= -dailyLoss) {
+        text += "<br>🔴 Достигнут лимит убытка!";
+    }
+    document.getElementById("budgetInfo").innerHTML = text;
+}
+
+function updateStats() {
+    let wins = trades.filter(t => t > 0);
+    let losses = trades.filter(t => t < 0);
+    let winrate = trades.length ? (wins.length / trades.length * 100).toFixed(1) : 0;
+    let totalProfit = trades.reduce((a, b) => a + b, 0).toFixed(2);
+    let text = "📈 Винрейт: " + winrate + "%<br>";
+    text += "📊 Всего сделок: " + trades.length + "<br>";
+    text += "💰 Общая прибыль: " + totalProfit + "$<br>";
+    text += "🏆 Прогресс к 1200$: " + ((balance / BIG_GOAL) * 100).toFixed(1) + "%";
+    document.getElementById("statsBox").innerHTML = text;
+}
+
+// Графики
+const dailyChart = new Chart(document.getElementById("dailyChart"), {
+    type: 'bar',
+    data: { labels: [], datasets: [{ data: [], backgroundColor: "#38bdf8" }] },
+    options: { responsive: true, maintainAspectRatio: false }
+});
+
+const balanceChart = new Chart(document.getElementById("balanceChart"), {
+    type: 'line',
+    data: { labels: [], datasets: [{ data: [], borderColor: "#22c55e", fill: true }] },
+    options: { responsive: true, maintainAspectRatio: false }
+});
+
+function updateCharts() {
+    let days = Object.keys(dailyHistory).sort();
+    dailyChart.data.labels = days;
+    dailyChart.data.datasets[0].data = days.map(d => dailyHistory[d]);
+    dailyChart.update();
+    
+    let bal = 20;
+    let hist = [bal];
+    let histLabels = [0];
+    trades.forEach((t, i) => {
+        bal += t;
+        hist.push(bal);
+        histLabels.push(i + 1);
+    });
+    balanceChart.data.labels = histLabels;
+    balanceChart.data.datasets[0].data = hist;
+    balanceChart.update();
+}
+
+function save() {
+    localStorage.balance = balance;
+    localStorage.trades = JSON.stringify(trades);
+    localStorage.dates = JSON.stringify(dates);
+    localStorage.tradeDetails = JSON.stringify(tradeDetails);
+    localStorage.dailyHistory = JSON.stringify(dailyHistory);
+}
+
+// Ініціалізація
+renderTrades();
+updateTopStats();
+updateCharts();
+updateStats();
+updateBudget();
+updateDailyHistoryList();
+
+document.getElementById("dailyGoal").value = dailyGoal;
+document.getElementById("dailyLoss").value = dailyLoss;
+</script>
+
+</body>
+</html>
