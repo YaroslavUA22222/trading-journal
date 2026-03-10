@@ -130,19 +130,19 @@ box-shadow:0 5px 15px rgba(0,0,0,0.3);
 .deleteAll{background:#7f1d1d;color:white;}
 .save{background:#38bdf8;color:white;}
 
-/* ВИПРАВЛЕНІ КВАДРАТИ */
+/* КВАДРАТИ ЯК ТИ ХОТІВ */
 .squaresContainer{
 display:flex;
 flex-wrap:wrap;
-gap:6px;
+gap:10px;
 margin-top:20px;
 max-width:100%;
 }
 
 .square{
-width:65px;
-height:65px;
-border-radius:6px;
+width:80px;
+height:80px;
+border-radius:8px;
 display:flex;
 flex-direction:column;
 align-items:center;
@@ -151,10 +151,10 @@ font-weight:bold;
 transition:all 0.2s;
 background:#1e293b;
 border:1px solid #334155;
-font-size:10px;
+font-size:12px;
 text-align:center;
-line-height:1.2;
-padding:2px;
+line-height:1.3;
+padding:5px;
 position:relative;
 cursor:pointer;
 flex-shrink:0;
@@ -178,26 +178,27 @@ border:none;
 }
 
 .square.spead{
-border-left:3px solid #f59e0b;
+border-left:4px solid #f59e0b;
 }
 
 .square.prostrel{
-border-left:3px solid #8b5cf6;
+border-left:4px solid #8b5cf6;
 }
 
-/* ВИПРАВЛЕНІ ПІДКАЗКИ */
+/* ПІДКАЗКИ */
 .custom-tooltip{
 position:fixed;
 background:#020617;
-padding:6px 10px;
-border-radius:4px;
-font-size:11px;
+padding:8px 12px;
+border-radius:6px;
+font-size:12px;
 border:1px solid #38bdf8;
 z-index:9999;
 color:white;
 pointer-events:none;
-box-shadow:0 3px 10px rgba(0,0,0,0.5);
+box-shadow:0 5px 15px rgba(0,0,0,0.5);
 white-space:nowrap;
+line-height:1.5;
 }
 
 .tab{display:none}
@@ -395,7 +396,6 @@ async function sendTradeToTradeNote(tradeData) {
 }
 
 // ========== ФУНКЦІЯ ДЛЯ ПІДКАЗОК ==========
-let tooltipTimeout;
 let currentTooltip = null;
 
 function showTooltip(event, text) {
@@ -409,7 +409,7 @@ function showTooltip(event, text) {
     document.body.appendChild(currentTooltip);
     
     let x = event.clientX + 15;
-    let y = event.clientY - 40;
+    let y = event.clientY - 50;
     
     if (x + currentTooltip.offsetWidth > window.innerWidth) {
         x = window.innerWidth - currentTooltip.offsetWidth - 15;
@@ -583,7 +583,7 @@ function renderTrades() {
         let square = document.createElement("div");
         square.className = `square ${t > 0 ? 'win' : 'loss'} ${typeClass}`;
         
-        let coinText = detail.coin.length > 5 ? detail.coin.substring(0,5)+'…' : detail.coin;
+        let coinText = detail.coin.length > 6 ? detail.coin.substring(0,6)+'…' : detail.coin;
         square.innerHTML = `
             <div><strong>${coinText}</strong></div>
             <div>${t > 0 ? '+' : ''}${t}$</div>
