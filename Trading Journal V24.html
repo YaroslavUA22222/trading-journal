@@ -130,17 +130,19 @@ box-shadow:0 5px 15px rgba(0,0,0,0.3);
 .deleteAll{background:#7f1d1d;color:white;}
 .save{background:#38bdf8;color:white;}
 
+/* ВИПРАВЛЕНІ КВАДРАТИ */
 .squaresContainer{
 display:flex;
 flex-wrap:wrap;
-gap:8px;
+gap:6px;
 margin-top:20px;
+max-width:100%;
 }
 
 .square{
-width:80px;
-height:80px;
-border-radius:8px;
+width:65px;
+height:65px;
+border-radius:6px;
 display:flex;
 flex-direction:column;
 align-items:center;
@@ -149,19 +151,20 @@ font-weight:bold;
 transition:all 0.2s;
 background:#1e293b;
 border:1px solid #334155;
-font-size:12px;
+font-size:10px;
 text-align:center;
-line-height:1.3;
-padding:5px;
+line-height:1.2;
+padding:2px;
 position:relative;
+cursor:pointer;
+flex-shrink:0;
 }
 
 .square:hover{
-transform:scale(1.1);
-cursor:pointer;
-box-shadow:0 10px 20px rgba(0,0,0,0.3);
+transform:scale(1.05);
+box-shadow:0 5px 15px rgba(0,0,0,0.3);
 border-color:#38bdf8;
-z-index:10;
+z-index:5;
 }
 
 .square.win{
@@ -175,32 +178,26 @@ border:none;
 }
 
 .square.spead{
-border-left:4px solid #f59e0b;
+border-left:3px solid #f59e0b;
 }
 
 .square.prostrel{
-border-left:4px solid #8b5cf6;
+border-left:3px solid #8b5cf6;
 }
 
-.square:hover .tooltip{
-display:block;
-}
-
-.tooltip{
-display:none;
-position:absolute;
-bottom:100%;
-left:50%;
-transform:translateX(-50%);
+/* ВИПРАВЛЕНІ ПІДКАЗКИ */
+.custom-tooltip{
+position:fixed;
 background:#020617;
-padding:8px;
-border-radius:6px;
-font-size:12px;
-white-space:nowrap;
+padding:6px 10px;
+border-radius:4px;
+font-size:11px;
 border:1px solid #38bdf8;
-margin-bottom:5px;
-z-index:20;
+z-index:9999;
 color:white;
+pointer-events:none;
+box-shadow:0 3px 10px rgba(0,0,0,0.5);
+white-space:nowrap;
 }
 
 .tab{display:none}
@@ -397,6 +394,41 @@ async function sendTradeToTradeNote(tradeData) {
     }
 }
 
+// ========== ФУНКЦІЯ ДЛЯ ПІДКАЗОК ==========
+let tooltipTimeout;
+let currentTooltip = null;
+
+function showTooltip(event, text) {
+    if (currentTooltip) {
+        currentTooltip.remove();
+    }
+    
+    currentTooltip = document.createElement('div');
+    currentTooltip.className = 'custom-tooltip';
+    currentTooltip.innerText = text;
+    document.body.appendChild(currentTooltip);
+    
+    let x = event.clientX + 15;
+    let y = event.clientY - 40;
+    
+    if (x + currentTooltip.offsetWidth > window.innerWidth) {
+        x = window.innerWidth - currentTooltip.offsetWidth - 15;
+    }
+    if (y < 0) {
+        y = event.clientY + 20;
+    }
+    
+    currentTooltip.style.left = x + 'px';
+    currentTooltip.style.top = y + 'px';
+}
+
+function hideTooltip() {
+    if (currentTooltip) {
+        currentTooltip.remove();
+        currentTooltip = null;
+    }
+}
+
 // ========== ОСНОВНІ ДАНІ ==========
 let balance = localStorage.balance ? Number(localStorage.balance) : 20;
 let trades = localStorage.trades ? JSON.parse(localStorage.trades) : [];
@@ -454,7 +486,6 @@ function addTrade(win) {
     updateBudget();
     updateDailyHistoryList();
     
-    // ВІДПРАВЛЯЄМО В TRADENOTE
     sendTradeToTradeNote({ coin: coin, amount: v, type: type, side: win ? "BC" : "SS" });
     
     document.getElementById("amount").value = "";
@@ -551,17 +582,19 @@ function renderTrades() {
         
         let square = document.createElement("div");
         square.className = `square ${t > 0 ? 'win' : 'loss'} ${typeClass}`;
+        
+        let coinText = detail.coin.length > 5 ? detail.coin.substring(0,5)+'…' : detail.coin;
         square.innerHTML = `
-            <div><strong>${detail.coin}</strong></div>
+            <div><strong>${coinText}</strong></div>
             <div>${t > 0 ? '+' : ''}${t}$</div>
-            <div class="tooltip">
-                Монета: ${detail.coin}<br>
-                Тип: ${detail.type}<br>
-                Сума: ${t > 0 ? '+' : ''}${t}$<br>
-                Дата: ${dates[i] || ''}
-            </div>
         `;
+        
+        let tooltipText = `Монета: ${detail.coin}\nТип: ${detail.type}\nСума: ${t > 0 ? '+' : ''}${t}$\nДата: ${dates[i] || ''}`;
+        
+        square.onmouseenter = (e) => showTooltip(e, tooltipText);
+        square.onmouseleave = hideTooltip;
         square.onclick = function() { deleteSpecificTrade(i - start); };
+        
         container.appendChild(square);
     }
 }
