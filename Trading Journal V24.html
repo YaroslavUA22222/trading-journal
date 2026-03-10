@@ -331,7 +331,7 @@ border-radius:4px;
 </div>
 </div>
 
-<!-- TRADES -->
+<!-- TRADES - ТЕПЕР З ВИБОРОМ ДАТИ -->
 <div id="trades" class="tab active">
 <h2>Сделки (поштучно)</h2>
 <div class="controls">
@@ -341,6 +341,7 @@ border-radius:4px;
 <option value="spead">📊 Спред</option>
 <option value="prostrel">⚡ Прострел</option>
 </select>
+<input type="date" id="tradeDate" style="width:150px;">
 <button class="plus" onclick="addTrade(true)">+ Прибыль</button>
 <button class="minus" onclick="addTrade(false)">- Убыток</button>
 <button class="delete" onclick="deleteLastTrade()">⌫ Удалить последнюю</button>
@@ -350,7 +351,7 @@ border-radius:4px;
 <div class="note">Наведите на квадрат чтобы увидеть детали. Нажмите чтобы удалить.</div>
 </div>
 
-<!-- DAILY TRADES -->
+<!-- DAILY TRADES - ТЕПЕР З ВИБОРОМ ДАТИ -->
 <div id="dailyTrades" class="tab">
 <h2>Дневной результат</h2>
 <p class="note">Введите сумму, которую заработали сегодня</p>
@@ -361,6 +362,7 @@ border-radius:4px;
 <option value="spead">📊 Спред</option>
 <option value="prostrel">⚡ Прострел</option>
 </select>
+<input type="date" id="dailyTradeDate" style="width:150px;">
 <button class="plus" onclick="addDailyTrade(true)">+ Дневная прибыль</button>
 <button class="minus" onclick="addDailyTrade(false)">- Дневной убыток</button>
 <button class="delete" onclick="deleteLastDailyTrade()">⌫ Удалить последнюю дневную</button>
@@ -379,7 +381,7 @@ border-radius:4px;
 <canvas id="balanceChart"></canvas>
 </div>
 
-<!-- BALANCE - ТЕПЕР МОЖНА ЗМІНЮВАТИ ЦІЛЬ -->
+<!-- BALANCE -->
 <div id="balanceTab" class="tab">
 <h2>Текущий баланс</h2>
 <div class="controls">
@@ -387,7 +389,7 @@ border-radius:4px;
 <button class="save" onclick="setBalance()">Сохранить</button>
 </div>
 
-<!-- НОВИЙ БЛОК ДЛЯ ЗМІНИ ЦІЛІ -->
+<!-- БЛОК ДЛЯ ЗМІНИ ЦІЛІ -->
 <div class="box" style="margin-top:20px;">
 <h3>🎯 Большая цель</h3>
 <div class="controls">
@@ -427,6 +429,17 @@ function openTab(tabId) {
         tab.classList.remove('active');
     });
     document.getElementById(tabId).classList.add('active');
+    
+    // Встановлюємо сьогоднішню дату в поля
+    if (tabId === 'trades' || tabId === 'dailyTrades') {
+        let today = new Date().toISOString().split('T')[0];
+        if (tabId === 'trades' && !document.getElementById('tradeDate').value) {
+            document.getElementById('tradeDate').value = today;
+        }
+        if (tabId === 'dailyTrades' && !document.getElementById('dailyTradeDate').value) {
+            document.getElementById('dailyTradeDate').value = today;
+        }
+    }
 }
 
 // ========== ВАШ URL ТА КЛЮЧ ==========
@@ -511,7 +524,6 @@ let dates = localStorage.dates ? JSON.parse(localStorage.dates) : [];
 let tradeDetails = localStorage.tradeDetails ? JSON.parse(localStorage.tradeDetails) : [];
 let dailyHistory = localStorage.dailyHistory ? JSON.parse(localStorage.dailyHistory) : {};
 
-// ЗМІНЕНО: тепер let замість const, і беремо з localStorage
 let BIG_GOAL = localStorage.bigGoal ? Number(localStorage.bigGoal) : 1200;
 let dailyGoal = localStorage.dailyGoal ? Number(localStorage.dailyGoal) : 50;
 let dailyLoss = localStorage.dailyLoss ? Number(localStorage.dailyLoss) : 20;
@@ -527,7 +539,6 @@ function getTodayProfit() {
     return dailyHistory[today] || 0;
 }
 
-// ОНОВЛЕНО: тепер використовує BIG_GOAL як змінну
 function updateTopStats() {
     document.getElementById("balance").innerText = balance.toFixed(2);
     document.getElementById("currentBalance").innerText = balance.toFixed(2);
@@ -557,7 +568,7 @@ function updateTopStats() {
     document.getElementById("currentGoal").innerText = BIG_GOAL;
 }
 
-// ========== НОВА ФУНКЦІЯ ДЛЯ ЗМІНИ ЦІЛІ ==========
+// ========== ФУНКЦІЯ ДЛЯ ЗМІНИ ЦІЛІ ==========
 function setBigGoal() {
     let newGoal = Number(document.getElementById("goalInput").value);
     if (!newGoal || newGoal < 1) {
@@ -588,24 +599,26 @@ function showNotification(title, message, type = 'success') {
     setTimeout(() => notif.remove(), 3000);
 }
 
-// ========== ТОРГОВІ ФУНКЦІЇ ==========
+// ========== ТОРГОВІ ФУНКЦІЇ З ДАТОЮ ==========
 function addTrade(win) {
     let v = Number(document.getElementById("amount").value);
     let coin = document.getElementById("coinName").value.trim() || 'Unknown';
     let typeSelect = document.getElementById("tradeType");
     let type = typeSelect.options[typeSelect.selectedIndex].text;
+    let selectedDate = document.getElementById("tradeDate").value;
     
     if (!v) { alert('Введіть суму!'); return; }
+    if (!selectedDate) { alert('Виберіть дату!'); return; }
     if (!win) v = -Math.abs(v);
     
     balance += v;
-    let today = getToday();
-    if (!dailyHistory[today]) dailyHistory[today] = 0;
-    dailyHistory[today] += v;
+    
+    if (!dailyHistory[selectedDate]) dailyHistory[selectedDate] = 0;
+    dailyHistory[selectedDate] += v;
     
     trades.push(v);
-    dates.push(new Date().toLocaleString());
-    tradeDetails.push({ coin: coin, type: type, amount: v, date: new Date().toLocaleString() });
+    dates.push(selectedDate + ' ' + new Date().toLocaleTimeString());
+    tradeDetails.push({ coin: coin, type: type, amount: v, date: selectedDate });
     
     save();
     renderTrades();
@@ -630,17 +643,19 @@ function addDailyTrade(win) {
     let coin = document.getElementById("dailyCoin").value.trim() || 'Unknown';
     let typeSelect = document.getElementById("dailyType");
     let type = typeSelect.options[typeSelect.selectedIndex].text;
+    let selectedDate = document.getElementById("dailyTradeDate").value;
     
     if (!v) { alert('Введіть суму!'); return; }
+    if (!selectedDate) { alert('Виберіть дату!'); return; }
     if (!win) v = -Math.abs(v);
     
     balance += v;
-    let today = getToday();
-    dailyHistory[today] = (dailyHistory[today] || 0) + v;
+    
+    dailyHistory[selectedDate] = (dailyHistory[selectedDate] || 0) + v;
     
     trades.push(v);
-    dates.push(new Date().toLocaleString() + " (денний)");
-    tradeDetails.push({ coin: coin, type: type, amount: v, date: new Date().toLocaleString(), isDaily: true });
+    dates.push(selectedDate + ' ' + new Date().toLocaleTimeString() + " (денний)");
+    tradeDetails.push({ coin: coin, type: type, amount: v, date: selectedDate, isDaily: true });
     
     save();
     renderTrades();
@@ -843,6 +858,11 @@ updateDailyHistoryList();
 document.getElementById("dailyGoal").value = dailyGoal;
 document.getElementById("dailyLoss").value = dailyLoss;
 document.getElementById("goalInput").value = BIG_GOAL;
+
+// Встановлюємо сьогоднішню дату
+let today = new Date().toISOString().split('T')[0];
+document.getElementById('tradeDate').value = today;
+document.getElementById('dailyTradeDate').value = today;
 </script>
 
 <style>
